@@ -1,0 +1,109 @@
+"""Reads a list of staitons and queries CDEC to
+discover what sensors are present at each. Saves
+output as yaml"""
+import logging
+import urllib.request
+import yaml
+from bs4 import BeautifulSoup
+logging.basicConfig(
+    filename='./logs/query_station_sensors.log', level=logging.DEBUG)
+
+
+def get_html_from_url(target_url):
+    """Take url and return html"""
+    with urllib.request.urlopen(target_url) as response:
+        output = response.read()
+
+    return output
+
+
+def get_html_tags(input_html, tag_types):
+    """Take html and tag type, return values of matching tags as list"""
+    soup = BeautifulSoup(input_html, 'html.parser')
+    tags = soup.find_all([tag_types])
+    return tags
+
+
+def parse_station_info(station):
+    """Gets station information from station record and assembles
+    dict key for sensor list dict"""
+    station_info = station.split(",")
+    station_id = station_info[1]
+    station_elevation = station_info[2]
+    station_latitude = station_info[3]
+    station_longitude = station_info[4]
+    station_key = f"{station_id}, {station_elevation},{station_latitude}, {station_longitude}"
+
+    # if (len(station_id) == 3) and (station_id.isalpha):
+    return(station_id, station_key)
+
+
+def get_sensor_types(station_key, tags):
+    """Get all sensor type associate with a station"""
+    # first sensor number should be on line 27
+    station_sensors = {}
+    station_sensors[station_key] = [tags[27].get_text()]
+    # second sensor number should be on line 33
+    i = 33
+
+    while i < len(tags):
+
+        sensor_type = tags[i].get_text()
+
+        if sensor_type.isnumeric():
+            station_sensors[station_key].append(sensor_type)
+
+        i += 6
+
+    return station_sensors
+
+
+def main():
+    """ Take complete station list and determine which sensor
+    types are present at each station"""
+
+    output = open("station_sensors.yaml", "w")
+    output.write("# sensors by station\n")
+    output.close()
+
+    station_list = open("./data/complete_station_list.csv", "r")
+    next(station_list)
+
+    for station in station_list:
+        station_id, station_key = parse_station_info(station)
+        logging.info(' Getting metadata for %s staton.', station_id)
+        url = f'http://cdec.water.ca.gov/dynamicapp/staMeta?station_id={station_id}'
+
+        try:
+            html = get_html_from_url(url)
+
+        except (SystemExit, KeyboardInterrupt):
+            logging.warning(' Failed to fetch html for station %s', station_id)
+
+        else:
+            try:
+                tags = get_html_tags(html, ["th", "td"])
+
+            except (SystemExit, KeyboardInterrupt):
+                logging.warning(
+                    ' Failed to get sensor table tags for station %s', station_id)
+
+            else:
+                if len(tags) > 27:
+                    if tags[20].get_text() == "Sensor Description":
+                        try:
+                            station_sensors = get_sensor_types(
+                                station_key, tags)
+
+                        except (SystemExit, KeyboardInterrupt):
+                            logging.warning(
+                                ' Failed to get sensor types for station %s', station_id)
+
+                        else:
+                            with open("./data/station_sensors.yaml", "a") as output:
+                                yaml.dump(station_sensors, output)
+                            output.close()
+
+
+if __name__ == "__main__":
+    main()
