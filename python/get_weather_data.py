@@ -1,6 +1,6 @@
-""" Gets weather data from target stations and sensors
-in a date range. Saves data into separate csv files
-for each sensor type """
+# Gets weather data from target stations and sensors
+# in a date a range. Saves data into separate csv files
+# for each sensor type.
 
 import requests
 import csv

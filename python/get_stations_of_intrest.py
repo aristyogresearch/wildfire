@@ -1,10 +1,19 @@
+# Finds stations which have the sensors we are intrested 
+# in. Needs list of what sensors are present at each staiton
+# in 'station_sensors.yaml' and a list of target sensors 
+# in 'target_sensors.csv'. Writes list of station with location
+# info. to 'target_stations.csv'
+
 import logging
 import yaml
+
 logging.basicConfig(
-    filename='./logs/get_stations_of_intrest.log', level=logging.DEBUG)
+    filename='logs/get_stations_of_intrest.log', level=logging.DEBUG)
 
 
 def get_sensor_ids(source_sensors):
+    ''' Takes list of sensor types of intrest
+    returns a list of just the sensor ids'''
     next(source_sensors)
     target_sensor_ids = []
 
@@ -15,16 +24,18 @@ def get_sensor_ids(source_sensors):
 
     return target_sensor_ids
 
-
-source_sensors = open("./data/weather_station_data/target_sensors_short.csv", "r")
+# Read in list of the sensor types we are intrested in
+source_sensors = open("data/CDEC_weather_station_data/target_sensors.csv", "r")
 target_sensor_ids = get_sensor_ids(source_sensors)
 source_sensors.close()
 
-station_sensors = open("./data/weather_station_data/station_sensors.yaml", "r")
+# Read in dict of which sensors are present at each station
+station_sensors = open("data/CDEC_weather_station_data/station_sensors.yaml", "r")
 station_sensors_dict = yaml.safe_load(station_sensors)
 station_sensors.close()
 
-output = open("./data/weather_station_data/target_stations.csv", "w")
+# Find all stations which have at least one of the target sensor types
+output = open("data/CDEC_weather_station_data/target_stations.csv", "w")
 output.write("station,elevation,latitude,longitude\n")
 
 for key in station_sensors_dict:
@@ -32,3 +43,5 @@ for key in station_sensors_dict:
 
     if len(set(target_sensor_ids).intersection(sensor_list)) > 0:
         output.write(f"{key}\n")
+
+output.close()

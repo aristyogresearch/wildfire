@@ -1,13 +1,14 @@
-"""Queries the CDEC server to get current lists
-of stations reporting hourly and daily. Stores
-as single csv file"""
+# Queries the CDEC server to get current list
+# of stations reporting hourly and daily. Stores
+# as single csv file 'complete_CDEC_station_list.csv'
+
 import csv
 import logging
 import urllib.request
 from bs4 import BeautifulSoup
 
 logging.basicConfig(
-    filename='./logs/update_station_list.log', level=logging.DEBUG)
+    filename = 'logs/update_station_list.log', level = logging.DEBUG)
 
 
 def get_html_from_url(url):
@@ -39,7 +40,7 @@ def get_html_table_text(html, tag):
 
 def main():
     """Retreive and save station data"""
-    station_list = open("./data/complete_station_list.csv", "w", newline="")
+    station_list = open("data/CDEC_weather_station_data/complete_CDEC_station_list.csv", "w", newline = "")
     station_list.write(
         "Station,ID,Elev_(feet),Latitude,Longitude,County,River_Basin\n")
 

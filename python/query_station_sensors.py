@@ -1,12 +1,15 @@
-"""Reads a list of staitons and queries CDEC to
-discover what sensors are present at each. Saves
-output as yaml"""
+# Reads a list of staitons in 'complete_station_list.csv' 
+# and queries CDEC to discover what sensors are present at 
+# saves to yaml. Key is station ID, elevation, latitude
+# and longitude all concatenated together. Value is list
+# of sensor types.
+
 import logging
 import urllib.request
 import yaml
 from bs4 import BeautifulSoup
 logging.basicConfig(
-    filename='./logs/query_station_sensors.log', level=logging.DEBUG)
+    filename='logs/query_station_sensors.log', level=logging.DEBUG)
 
 
 def get_html_from_url(target_url):
@@ -40,14 +43,13 @@ def parse_station_info(station):
 
 def get_sensor_types(station_key, tags):
     """Get all sensor type associate with a station"""
-    # first sensor number should be on line 27
     station_sensors = {}
+    # first sensor number should be on line 27
     station_sensors[station_key] = [tags[27].get_text()]
     # second sensor number should be on line 33
     i = 33
 
     while i < len(tags):
-
         sensor_type = tags[i].get_text()
 
         if sensor_type.isnumeric():
@@ -61,12 +63,11 @@ def get_sensor_types(station_key, tags):
 def main():
     """ Take complete station list and determine which sensor
     types are present at each station"""
-
     output = open("station_sensors.yaml", "w")
     output.write("# sensors by station\n")
     output.close()
 
-    station_list = open("./data/complete_station_list.csv", "r")
+    station_list = open("./data/CDEC_weather_station_data/complete_station_list.csv", "r")
     next(station_list)
 
     for station in station_list:
@@ -100,7 +101,7 @@ def main():
                                 ' Failed to get sensor types for station %s', station_id)
 
                         else:
-                            with open("./data/station_sensors.yaml", "a") as output:
+                            with open("./data/CDEC_weather_station_data/station_sensors.yaml", "a") as output:
                                 yaml.dump(station_sensors, output)
                             output.close()
 
