@@ -49,19 +49,19 @@ def main():
 
     # read in sensor we want data from
     source_sensors = open(
-        "./data/weather_station_data/target_sensors_short.csv", "r")
+        "./data/CDEC_weather_station_data/target_sensors_short.csv", "r")
     sensor_ids = get_target_sensor_ids(source_sensors)
     source_sensors.close()
 
     # read in stations to query
     source_stations = open(
-        "./data/weather_station_data/target_stations.csv", "r")
+        "./data/CDEC_weather_station_data/target_stations.csv", "r")
     station_list = get_station_list(source_stations)
     source_stations.close()
 
     # load dict. to translate numeric sensor ID to sensor name
     sensor_defs = open(
-        "./data/weather_station_data/sensor_definitions.yaml", "r")
+        "./data/CDEC_weather_station_data/sensor_definitions.yaml", "r")
     sensor_defs_dict = yaml.safe_load(sensor_defs)
     sensor_defs.close()
 
@@ -71,7 +71,7 @@ def main():
         sensor_name = sensor_defs_dict[sensor_id]
         logging.info(' Getting data for sensor %s', sensor_name)
         weather_data = open(
-            f"./data/training_data/weather_data/{sensor_name}.csv", "w")
+            f"./data/training_data/weather_data/{sensor_name}_1mo.csv", "w")
         weather_data.write(
             "STATION_ID,DURATION,SENSOR_NUMBER,SENSOR_TYPE,DATE_TIME,OBS_DATE,VALUE,DATA_FLAG,UNITS\n")
 
@@ -84,7 +84,7 @@ def main():
             logging.info(f' Getting data from station group: {station_group}')
             station_group = (',').join(station_group)
             url = (
-                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2011-01-01T23%3A00&End=2016-01-01T23%3A00')
+                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2015-01-01T23%3A00&End=2015-02-01T23%3A00')
             logging.info(' Querying url: %s', url)
 
             with requests.get(url, stream=True) as r:
@@ -94,8 +94,10 @@ def main():
 
                 # write weather data to file
                 for row in csv.reader(lines):
-                    row_string = ",".join(row)
-                    weather_data.write(row_string+"\n")
+                    value = row[6]
+                    if value != '---':
+                        row_string = ",".join(row)
+                        weather_data.write(row_string+"\n")
 
         weather_data.close()
 
