@@ -52,6 +52,7 @@ def main():
         html = get_html_from_url(url)
         tag_text = get_html_table_text(html, "td")
         stations = split_list(tag_text, 7)
+        print(type(stations))
         writer = csv.writer(station_list)
         writer.writerows(stations)
 

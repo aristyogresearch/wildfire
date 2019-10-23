@@ -42,6 +42,7 @@ for key in station_sensors_dict:
     sensor_list = station_sensors_dict[key]
 
     if len(set(target_sensor_ids).intersection(sensor_list)) > 0:
+        print(f"{key}")
         output.write(f"{key}\n")
 
 output.close()

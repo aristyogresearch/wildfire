@@ -71,7 +71,7 @@ def main():
         sensor_name = sensor_defs_dict[sensor_id]
         logging.info(' Getting data for sensor %s', sensor_name)
         weather_data = open(
-            f"./data/training_data/weather_data/{sensor_name}_1d.csv", "w")
+            f"./data/weather_data/{sensor_name}_5yr.csv", "w")
         weather_data.write(
             "STATION_ID,DURATION,SENSOR_NUMBER,SENSOR_TYPE,DATE_TIME,OBS_DATE,VALUE,DATA_FLAG,UNITS\n")
 
@@ -84,7 +84,7 @@ def main():
             logging.info(f' Getting data from station group: {station_group}')
             station_group = (',').join(station_group)
             url = (
-                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2015-01-01T23%3A00&End=2015-01-02T23%3A00')
+                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2011-01-01T23%3A00&End=2016-01-01T23%3A00')
             logging.info(' Querying url: %s', url)
 
             with requests.get(url, stream=True) as r:

@@ -1,6 +1,6 @@
 # Reads a list of staitons in 'complete_station_list.csv' 
-# and queries CDEC to discover what sensors are present at 
-# saves to yaml. Key is station ID, elevation, latitude
+# and queries CDEC to discover what sensors are present. 
+# Saves to yaml. Key is station ID, elevation, latitude
 # and longitude all concatenated together. Value is list
 # of sensor types.
 
@@ -67,8 +67,9 @@ def main():
     output.write("# sensors by station\n")
     output.close()
 
-    station_list = open("./data/CDEC_weather_station_data/complete_station_list.csv", "r")
+    station_list = open("./data/CDEC_weather_station_data/complete_CDEC_station_list.csv", "r")
     next(station_list)
+    station_list = list(set(station_list))
 
     for station in station_list:
         station_id, station_key = parse_station_info(station)
