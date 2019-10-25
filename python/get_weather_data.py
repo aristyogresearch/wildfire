@@ -7,7 +7,7 @@ import csv
 import logging
 import yaml
 logging.basicConfig(
-    filename='./logs/get_weather_data.log', level = logging.DEBUG)
+    filename='./logs/get_weather_data.log', level=logging.DEBUG)
 
 
 def split_list(long_list, chunk_size):
@@ -71,7 +71,7 @@ def main():
         sensor_name = sensor_defs_dict[sensor_id]
         logging.info(' Getting data for sensor %s', sensor_name)
         weather_data = open(
-            f"./data/weather_data/{sensor_name}_1day.csv", "w")
+            f"./data/weather_data/{sensor_name}_10yr.csv", "w")
         weather_data.write(
             "STATION_ID,DURATION,SENSOR_NUMBER,SENSOR_TYPE,DATE_TIME,OBS_DATE,VALUE,DATA_FLAG,UNITS\n")
 
@@ -84,20 +84,23 @@ def main():
             logging.info(f' Getting data from station group: {station_group}')
             station_group = (',').join(station_group)
             url = (
-                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2015-01-01T23%3A00&End=2015-01-02T23%3A00')
+                f'http://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations={station_group}&SensorNums={sensor_id}&Start=2005-01-01T23%3A00&End=2016-01-01T23%3A00')
             logging.info(' Querying url: %s', url)
 
             with requests.get(url, stream=True) as r:
-                lines = (line.decode('utf-8') for line in r.iter_lines())
+                try:
+                    lines = (line.decode('utf-8') for line in r.iter_lines())
+                    next(lines)
 
-                next(lines)
-
-                # write weather data to file
-                for row in csv.reader(lines):
-                    value = row[6]
-                    if value != '---':
-                        row_string = ",".join(row)
-                        weather_data.write(row_string+"\n")
+                    # write weather data to file
+                    for row in csv.reader(lines):
+                        value = row[6]
+                        if value != '---':
+                            row_string = ",".join(row)
+                            weather_data.write(row_string+"\n")
+                except:
+                    logging.info(f' Failed to get data for: {station_group}')
+                    station_groups.append(station_group)
 
         weather_data.close()
 
