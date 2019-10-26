@@ -76,7 +76,7 @@ def main():
             "STATION_ID,DURATION,SENSOR_NUMBER,SENSOR_TYPE,DATE_TIME,OBS_DATE,VALUE,DATA_FLAG,UNITS\n")
 
         # split station list into groups so we dont ask for too much data at once
-        station_groups = split_list(station_list, 100)
+        station_groups = split_list(station_list, 20)
 
         # loop over station gropus
         for station_group in station_groups:
@@ -100,7 +100,6 @@ def main():
                             weather_data.write(row_string+"\n")
                 except:
                     logging.info(f' Failed to get data for: {station_group}')
-                    station_groups.append(station_group)
 
         weather_data.close()
 
