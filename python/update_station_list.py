@@ -7,8 +7,14 @@ import logging
 import urllib.request
 from bs4 import BeautifulSoup
 
+from config import station_update_log
+from config import complete_CDEC_station_list
+from config import daily_reporting_CDEC_station_url
+from config import hourly_reporting_CDEC_station_url
+from config import complete_CDEC_station_list_header
+
 logging.basicConfig(
-    filename = 'logs/update_station_list.log', level = logging.DEBUG)
+    filename = station_update_log, level = logging.DEBUG)
 
 
 def get_html_from_url(url):
@@ -40,19 +46,16 @@ def get_html_table_text(html, tag):
 
 def main():
     """Retreive and save station data"""
-    station_list = open("data/CDEC_weather_station_data/complete_CDEC_station_list.csv", "w", newline = "")
-    station_list.write(
-        "Station,ID,Elev_(feet),Latitude,Longitude,County,River_Basin\n")
+    station_list = open(complete_CDEC_station_list, "w", newline = "")
+    station_list.write(complete_CDEC_station_list_header)
 
-    urls = ["http://cdec.water.ca.gov/misc/dailyStations.html",
-            "http://cdec.water.ca.gov/misc/realStations.html"]
+    urls = [daily_reporting_CDEC_station_url, hourly_reporting_CDEC_station_url]
 
     for url in urls:
 
         html = get_html_from_url(url)
         tag_text = get_html_table_text(html, "td")
         stations = split_list(tag_text, 7)
-        print(type(stations))
         writer = csv.writer(station_list)
         writer.writerows(stations)
 

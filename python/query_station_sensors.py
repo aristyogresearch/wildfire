@@ -8,8 +8,15 @@ import logging
 import urllib.request
 import yaml
 from bs4 import BeautifulSoup
+
+from config import query_station_sensors_log
+from config import station_sensors_list
+from config import station_sensors_header
+from config import complete_CDEC_station_list
+from config import station_info_base_base_url
+
 logging.basicConfig(
-    filename='logs/query_station_sensors.log', level=logging.DEBUG)
+    filename=query_station_sensors_log, level=logging.DEBUG)
 
 
 def get_html_from_url(target_url):
@@ -30,12 +37,12 @@ def get_html_tags(input_html, tag_types):
 def parse_station_info(station):
     """Gets station information from station record and assembles
     dict key for sensor list dict"""
-    station_info = station.split(",")
+    station_info = station.split(',')
     station_id = station_info[1]
     station_elevation = station_info[2]
     station_latitude = station_info[3]
     station_longitude = station_info[4]
-    station_key = f"{station_id}, {station_elevation},{station_latitude}, {station_longitude}"
+    station_key = f'{station_id}, {station_elevation},{station_latitude}, {station_longitude}'
 
     # if (len(station_id) == 3) and (station_id.isalpha):
     return(station_id, station_key)
@@ -63,18 +70,18 @@ def get_sensor_types(station_key, tags):
 def main():
     """ Take complete station list and determine which sensor
     types are present at each station"""
-    output = open("station_sensors.yaml", "w")
-    output.write("# sensors by station\n")
+    output = open(station_sensors_list, 'w')
+    output.write(station_sensors_header)
     output.close()
 
-    station_list = open("./data/CDEC_weather_station_data/complete_CDEC_station_list.csv", "r")
+    station_list = open(complete_CDEC_station_list, 'r')
     next(station_list)
     station_list = list(set(station_list))
 
     for station in station_list:
         station_id, station_key = parse_station_info(station)
         logging.info(' Getting metadata for %s staton.', station_id)
-        url = f'http://cdec.water.ca.gov/dynamicapp/staMeta?station_id={station_id}'
+        url = f'{station_info_base_base_url}{station_id}'
 
         try:
             html = get_html_from_url(url)
@@ -102,7 +109,7 @@ def main():
                                 ' Failed to get sensor types for station %s', station_id)
 
                         else:
-                            with open("./data/CDEC_weather_station_data/station_sensors.yaml", "a") as output:
+                            with open(station_sensors_list, 'a') as output:
                                 yaml.dump(station_sensors, output)
                             output.close()
 

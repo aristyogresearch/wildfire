@@ -4,6 +4,18 @@ import geopandas as gpd
 from multiprocessing import Pool
 from shapely.geometry import MultiPolygon, Polygon, Point
 
+from config import US_states_shapefile
+from config import full_geospatial_bin_rectangle
+from config import bin_file_header
+from config import california_geospatial_bins
+from config import n_threads
+from config import lat_start
+from config import long_start
+from config import lat_end
+from config import long_end
+from config import bin_width
+from config import bin_precision
+
 def point_in_california(point):
     '''Takes point and returns point if in California'''
     coord = Point(point['long'], point['lat'])
@@ -18,10 +30,10 @@ def cull_points(points):
     keepers = points.apply(point_in_california, axis=1)
     return keepers
     
-def parallelize(df, func, n_cores = n_threads):
+def parallelize(df, func, n_threads):
     '''Parallelizes point picking, takes dataframe of points
     and splits up the cull fuction over avalibile threads'''
-    df_split = np.array_split(df, n_cores)
+    df_split = np.array_split(df, n_threads)
     pool = Pool(n_cores)
     df = pd.concat(pool.map(func, df_split))
     pool.close()
@@ -29,7 +41,7 @@ def parallelize(df, func, n_cores = n_threads):
     return df
 
 # Load US states shapefile
-gdf = gpd.read_file('./data/spatial_data/cb_2018_us_state_500k.shp')
+gdf = gpd.read_file(US_states_shapefile)
 
 # Get just California
 california = gdf[gdf['NAME'] == 'California']
@@ -39,23 +51,18 @@ multipoly = california.loc[16, 'geometry']
 california = multipoly[-1]
 
 # Bin parameters
-lat_start = 32.52
-long_start = -124.48
-lat_end = 42.0
-long_end = -114.131
-bin_width = .1
 lat_coord = lat_start + bin_width
 long_coord = long_start + bin_width
 
 # Generate bin rectangle
-with open("./data/spatial_data/bins.csv","w") as output:
-    output.write("long,lat\n")
+with open(full_geospatial_bin_rectangle,'w') as output:
+    output.write(bin_file_header)
 
     while lat_coord < lat_end:
             long_coord = long_start + bin_width
 
             while long_coord < long_end:
-                output.write(f"{round(long_coord, 2)},{round(lat_coord, 2)}\n")
+                output.write(f'{round(long_coord, bin_precision)},{round(lat_coord, bin_precision)}\n')
                 long_coord += bin_width
 
             lat_coord += bin_width
@@ -63,7 +70,7 @@ with open("./data/spatial_data/bins.csv","w") as output:
 output.close()
 
 # Read bins into pandas dataframe
-bins = pd.read_csv('./data/spatial_data/bins.csv')
+bins = pd.read_csv(full_geospatial_bin_rectangle)
 
 # Set number of worker processes
 n_threads = 14
@@ -75,4 +82,4 @@ empty.index = ['long', 'lat']
 
 # Discard bins which fall outside of California
 keeper_bins = parallelize(bins, cull_points).dropna()
-keeper_bins.to_csv('./data/spatial_data/california_bins.csv', index = None, header = True)
+keeper_bins.to_csv(california_geospatial_bins, index = None, header = True)
