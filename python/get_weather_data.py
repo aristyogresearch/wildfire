@@ -6,25 +6,10 @@ import requests
 import csv
 import logging
 import yaml
-
-from config import get_weather_data_log
-from config import target_sensors_list_short
-from config import target_stations_list
-from config import sensor_definitions
-from config import weather_data_header
-from config import weather_data_base_url
-from config import weather_data_url_sensor_list
-from config import weather_data_url_date_range_start
-from config import weather_data_url_date_range_end
-from config import weather_data_url_end
-from config import weather_data_date_range_start
-from config import weather_data_date_range_end
-from config import weather_data_base_filename
-from config import weather_data_filname_end
-
+import config
 
 logging.basicConfig(
-    filename=get_weather_data_log, level=logging.DEBUG)
+    filename=config.get_weather_data_log, level=logging.DEBUG)
 
 
 def split_list(long_list, chunk_size):
@@ -61,21 +46,21 @@ def get_station_list(source_stations):
 
 
 def main():
-    """ Takes list of sensors of intrest and list of target staitons
+    """ Takes list of sensors of intrest and list of target staitons,
     returns weather data """
 
     # read in sensor we want data from
-    source_sensors = open(target_sensors_list_short, 'r')
+    source_sensors = open(config.target_sensors_list_short, 'r')
     sensor_ids = get_target_sensor_ids(source_sensors)
     source_sensors.close()
 
     # read in stations to query
-    source_stations = open(target_stations_list, 'r')
+    source_stations = open(config.target_stations_list, 'r')
     station_list = get_station_list(source_stations)
     source_stations.close()
 
     # load dict. to translate numeric sensor ID to sensor name
-    sensor_defs = open(sensor_definitions, 'r')
+    sensor_defs = open(config.sensor_definitions, 'r')
     sensor_defs_dict = yaml.safe_load(sensor_defs)
     sensor_defs.close()
 
@@ -84,9 +69,8 @@ def main():
         # get sensor name and setup output file for weather data
         sensor_name = sensor_defs_dict[sensor_id]
         logging.info(' Getting data for sensor %s', sensor_name)
-        weather_data = open(
-            f'{weather_data_base_filename}{sensor_name}{weather_data_filname_end}', 'w')
-        weather_data.write(weather_data_header)
+        weather_data = open(f'{config.weather_data_base_filename}{sensor_name}{config.weather_data_filname_end}', 'w')
+        weather_data.write(config.weather_data_header)
 
         # split station list into groups so we dont ask for too much data at once
         station_groups = split_list(station_list, 20)
@@ -96,8 +80,7 @@ def main():
             # constuct API call and query CDEC
             logging.info(f' Getting data from station group: {station_group}')
             station_group = (',').join(station_group)
-            url = (
-                f'{weather_data_url_base}{station_group}{weather_data_url_sensor_list}{sensor_id}{weather_data_url_date_range_start}{weather_data_date_range_start}{weather_data_url_date_range_end}{weather_data_date_range_end}{weather_data_url_end}')
+            url = (f'{config.weather_data_url_base}{station_group}{config.weather_data_url_sensor_list}{sensor_id}{config.weather_data_url_date_range_start}{config.data_date_range_start}{config.weather_data_url_date_range_end}{config.data_date_range_end}{config.weather_data_url_end}')
             logging.info(' Querying url: %s', url)
 
             with requests.get(url, stream=True) as r:

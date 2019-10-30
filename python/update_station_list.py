@@ -6,15 +6,10 @@ import csv
 import logging
 import urllib.request
 from bs4 import BeautifulSoup
-
-from config import station_update_log
-from config import complete_CDEC_station_list
-from config import daily_reporting_CDEC_station_url
-from config import hourly_reporting_CDEC_station_url
-from config import complete_CDEC_station_list_header
+import config
 
 logging.basicConfig(
-    filename = station_update_log, level = logging.DEBUG)
+    filename=config.station_update_log, level=logging.DEBUG)
 
 
 def get_html_from_url(url):
@@ -46,10 +41,10 @@ def get_html_table_text(html, tag):
 
 def main():
     """Retreive and save station data"""
-    station_list = open(complete_CDEC_station_list, "w", newline = "")
-    station_list.write(complete_CDEC_station_list_header)
+    station_list = open(config.complete_CDEC_station_list, "w", newline = "")
+    station_list.write(config.complete_CDEC_station_list_header)
 
-    urls = [daily_reporting_CDEC_station_url, hourly_reporting_CDEC_station_url]
+    urls = [config.daily_reporting_CDEC_station_url, config.hourly_reporting_CDEC_station_url]
 
     for url in urls:
 

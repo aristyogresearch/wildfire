@@ -8,15 +8,11 @@ import logging
 import urllib.request
 import yaml
 from bs4 import BeautifulSoup
+import config
 
-from config import query_station_sensors_log
-from config import station_sensors_list
-from config import station_sensors_header
-from config import complete_CDEC_station_list
-from config import station_info_base_base_url
 
 logging.basicConfig(
-    filename=query_station_sensors_log, level=logging.DEBUG)
+    filename=config.query_station_sensors_log, level=logging.DEBUG)
 
 
 def get_html_from_url(target_url):
@@ -70,18 +66,18 @@ def get_sensor_types(station_key, tags):
 def main():
     """ Take complete station list and determine which sensor
     types are present at each station"""
-    output = open(station_sensors_list, 'w')
-    output.write(station_sensors_header)
+    output = open(config.station_sensors_list, 'w')
+    output.write(config.station_sensors_header)
     output.close()
 
-    station_list = open(complete_CDEC_station_list, 'r')
+    station_list = open(config.complete_CDEC_station_list, 'r')
     next(station_list)
     station_list = list(set(station_list))
 
     for station in station_list:
         station_id, station_key = parse_station_info(station)
         logging.info(' Getting metadata for %s staton.', station_id)
-        url = f'{station_info_base_base_url}{station_id}'
+        url = f'{config.station_info_base_base_url}{station_id}'
 
         try:
             html = get_html_from_url(url)
@@ -109,7 +105,7 @@ def main():
                                 ' Failed to get sensor types for station %s', station_id)
 
                         else:
-                            with open(station_sensors_list, 'a') as output:
+                            with open(config.station_sensors_list, 'a') as output:
                                 yaml.dump(station_sensors, output)
                             output.close()
 
