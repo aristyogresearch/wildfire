@@ -29,21 +29,18 @@ This project is currently in the data wrangeling phase. The goal its to collect 
 * Humitidy
 * Precipitation
 * Wind speed
+This historical dataset will be used to train a machine learning model to predict wild fire ignition probibility. After inital training and validation is complete the next phase of the project will be to deploy the model as a real time prediction service utlizing current fire activity data and weather predictions.
 
+See the full [project proposal](https://github.com/gperdrizet/wildfire/tree/master/data/project_proposal.md) for more info.
 
 ## Getting Started
 
 1. Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
-2. Raw Data is being kept [here](Repo folder containing raw data) within this repo.
-
-    *If using offline data mention that and how they may obtain the data from the froup)*
+2. Raw Data is being kept [here](https://github.com/gperdrizet/wildfire/tree/master/data) within this repo.
     
-3. Data processing/transformation scripts are being kept [here](Repo folder containing data processing scripts/notebooks)
-4. etc...
+3. Data exploration/transformation notebooks are being kept [here](https://github.com/gperdrizet/wildfire/tree/master/notebooks)
+4. More finalized, script versions for data aquisition and transformation are being kept [Here](https://github.com/gperdrizet/wildfire/tree/master/python)  
 
-*If your project is well underway and setup is fairly complicated (ie. requires installation of many packages) create another "setup.md" file and link to it here*  
-
-5. Follow setup [instructions](Link to file)
 
 ## Featured Notebooks/Analysis/Deliverables
 * [Notebook/Markdown/Slide Deck Title](link)
@@ -51,18 +48,6 @@ This project is currently in the data wrangeling phase. The goal its to collect 
 * [Blog Post](link)
 
 
-## Contributing DSWG Members
+## Contributing Members
 
-**Team Leads (Contacts) : [Full Name](https://github.com/[github handle])(@slackHandle)**
-
-#### Other Members:
-
-|Name     |  Slack Handle   | 
-|---------|-----------------|
-|[Full Name](https://github.com/[github handle])| @johnDoe        |
-|[Full Name](https://github.com/[github handle]) |     @janeDoe    |
-
-## Contact
-* If you haven't joined the SF Brigade Slack, [you can do that here](http://c4sf.me/slack).  
-* Our slack channel is `#datasci-projectname`
-* Feel free to contact team leads with any questions or if you are interested in contributing!
+**Team Lead (Contact) : [George Perdrizet](https://github.com/gperdrizet)**
