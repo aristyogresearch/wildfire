@@ -2,10 +2,10 @@
 # colection data pipeline
 
 # Weather data type
-weather_data_type = 'REL_HUM'
+weather_data_type = 'TEMP'
 
 # Threads to use for parallel tasks
-n_threads = 16
+n_threads = 15
 
 # Geospatial bin parameters
 # Lat/long start and end define the
@@ -16,23 +16,23 @@ long_start = -124.48
 lat_end = 42.0
 long_end = -114.131
 
-bin_width = 0.1    # gegrees lat/long
+bin_width = 0.1    # degrees lat/long
 bin_precision = 2  # number of decimals to round bin coordinates to
 
 # Date & time parameters
 data_date_range_start = '2015-01-01'
-data_date_range_end = '2016-01-01'
+data_date_range_end = '2015-12-31'
 data_frequency = 'H'
 
 # Datafiles
-complete_CDEC_station_list = 'data/CDEC_weather_station_data/complete_CDEC_station_list.csv'
-target_sensors_list = 'data/CDEC_weather_station_data/target_sensors.csv'
-target_sensors_list_short = './data/CDEC_weather_station_data/target_sensors_short.csv'
-station_sensors_list = 'data/CDEC_weather_station_data/station_sensors.yaml'
-target_stations_list = 'data/CDEC_weather_station_data/target_stations.csv'
-sensor_definitions = './data/CDEC_weather_station_data/sensor_definitions.yaml'
+complete_CDEC_station_list = 'data/CDEC_weather_data/complete_CDEC_station_list.csv'
+target_sensors_list = 'data/CDEC_weather_data/target_sensors.csv'
+target_sensors_list_short = './data/CDEC_weather_data/target_sensors_short.csv'
+station_sensors_list = 'data/CDEC_weather_data/station_sensors.yaml'
+target_stations_list = 'data/CDEC_weather_data/target_stations.csv'
+sensor_definitions = 'data/CDEC_weather_data/sensor_definitions.yaml'
 
-weather_data_base_filename = './data/weather_data/'
+weather_data_base_filename = './data/CDEC_weather_data/'
 weather_data_filname_end = '_1yr.csv'
 
 US_states_shapefile = './data/spatial_data/cb_2018_us_state_500k.shp'
