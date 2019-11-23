@@ -1,51 +1,63 @@
-# Project Name
-This project is a part of my Machine Learning Engineering capstone project at [Springboard](https://www.springboard.com/workshops/ai-machine-learning-career-track/).
+# California Wildfire Probabillity Prediction
+
+The goal of this project is to build a machine learning model which can predict wildfire innitiation probability in california from publicaly avaliblle meteorology data.
 
 #### -- Project Status: [Active]
 
-## Project Intro/Objective
-The purpose of this project is to predict wild fire ignition probability in California using historical fire and weather data. Wild fires are common, destructive and deadly natural disasters. Current risk prediction methods can be improved upon by applying modern machine learning techniques and incorporating historical wild fire data.
+## Introduction
+
+Wild fires are common, destructive and deadly natural disasters. Current risk prediction methods can be improved upon by: 
+1. Applying modern machine learning techniques
+2. Leveraging historical wild fire data for model training and validation
 
 ### Methods Used
+
 * Inferential Statistics
 * Machine Learning
 * Data Visualization
+* Cartographic Projection
+* Time Series Analysis
+* Feature Engineering
 * Predictive Modeling
 
 ### Technologies
+
 * Python
 * PySpark
-* R
 * Pandas
+* NumPy
+* Shaply
 * GeoPandas
 * Xarray
 * Jupyter
+* Matplotlib
 
 ## Project Description
-This project is currently in the data wrangling phase. The goal its to collect and regularize the following data types for a time span of at least several years in California:
+
+This project is currently in the data wrangling phase. The goal is to collect and regularize the following data types in space and time:
 * Locations of past fire ignition sites
-* Size of/area burned by past fires
+* Past fire sizes
+* Past fire severity codes
 * Temperature
 * Humidity
 * Precipitation
 * Wind speed
 This historical dataset will be used to train a machine learning model to predict wild fire ignition probability. After initial training and validation is complete the next phase of the project will be to deploy the model as a real time prediction service utilizing current fire activity data and weather predictions.
 
-See the full [project proposal](https://github.com/gperdrizet/wildfire/tree/master/data/project_proposal.md) for more info.
+See the full [project proposal](https://github.com/gperdrizet/wildfire/tree/master/docs/project_proposal.md) for more info.
+
 
 ## Getting Started
 
 1. Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
-2. Raw Data is being kept [here](https://github.com/gperdrizet/wildfire/tree/master/data) within this repo.
-    
+2. Training data sets are being kept [here](https://github.com/gperdrizet/wildfire/tree/master/data/training_data/) within this repo.
 3. Data exploration/transformation notebooks are being kept [here](https://github.com/gperdrizet/wildfire/tree/master/notebooks)
-4. More finalized, scripts for data aquisition and transformation are being kept [Here](https://github.com/gperdrizet/wildfire/tree/master/python)  
+4. Finalized scripts for data aquisition and transformation are being kept [Here](https://github.com/gperdrizet/wildfire/tree/master/python)  
 
 
-## Featured Notebooks/Analysis/Deliverables
-* [Notebook/Markdown/Slide Deck Title](link)
-* [Notebook/Markdown/Slide DeckTitle](link)
-* [Blog Post](link)
+## Featured Notebooks
+
+* [Training data exploratory analysis](https://github.com/gperdrizet/wildfire/tree/master/notebooks/training_data_exploration.ipynb)
 
 
 ## Contributing Members
