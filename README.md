@@ -38,10 +38,25 @@ This project is currently in the data wrangling phase. The goal is to collect an
 * Locations of past fire ignition sites
 * Past fire sizes
 * Past fire severity codes
-* Temperature
-* Humidity
-* Precipitation
-* Wind speed
+* Surface Air Temperature
+* Air Temperature at 2 Meters
+* Acumulated Precipitation
+* Relative Humidity at 2 Meters
+* Dew Point Temperature
+* Surface Pressure
+* East-west Component of Wind
+* North-south Component of Wind
+* Vegitation Coverage',
+* Downward Long Wave EM Flux
+* Downward Short Wave EM Flux
+* Low Height Cloud Coverage
+* High Height Cloud Coverage
+* Medium Height Cloud Coverage
+* Planetary Boundry Layer Height
+* Precipitation Rate
+* Visibility
+* Upward Long Wave EM Flux
+
 This historical dataset will be used to train a machine learning model to predict wild fire ignition probability. After initial training and validation is complete the next phase of the project will be to deploy the model as a real time prediction service utilizing current fire activity data and weather predictions.
 
 See the full [project proposal](https://github.com/gperdrizet/wildfire/tree/master/docs/project_proposal.md) for more info.
