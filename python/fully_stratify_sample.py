@@ -1,146 +1,108 @@
+import time
 import random
+from random import randint
 from time import sleep
 import pandas as pd
 import numpy as np
 from mpi4py import MPI
 from scipy.stats import ks_2samp
-
-data_file = '../data/training_data/1992-1997_training_data_daily_mean.csv'
-
-sample_size = 10000
-old_ks = 0
-fraction = 0.001
-ks_threshold = 21
-sample_round = 0
-
-weather_variables = [
-    'weather_bin_month','weather_bin_year','air.sfc', 'air.2m',
-    'apcp', 'crain', 'rhum.2m', 'dpt.2m', 'pres.sfc', 'uwnd.10m',
-    'vwnd.10m', 'veg', 'dlwrf', 'dswrf', 'lcdc','hcdc', 'mcdc',
-    'hpbl', 'prate', 'vis', 'ulwrf.sfc'
-]
+from sklearn.preprocessing import StandardScaler
 
 def k_random_sample(data, k):
-    # Takes a data frame and an number of observations
-    # returns dataframe containing k from n pseudorandom
+    # Takes a dataframe and an number of observations
+    # returns new dataframe containing k from n pseudorandom
     # observations with out replacement
 
     n = len(data)
     indices = random.sample(range(0, n), k)
     return data.iloc[indices]
 
-def cal_KS_total_statistic(data, sample_data, weather_variables):
 
-    total_ks = 0
-
+def ks_test(master_df, sample_ids, weather_variables):
+    
+    ks_pvals = []
+    sample = master_df[master_df['ID'].isin(sample_ids)]
+    
     for variable in weather_variables:
-        parent_data = np.array(data[variable])
+        master_data = np.array(master_df[variable])
         sample_data = np.array(sample[variable])
 
-        ks_result = ks_2samp(parent_data, sample_data)
-        total_ks = total_ks + ks_result[1]
+        ks_result = ks_2samp(master_data, sample_data)
+        ks_pvals.append(ks_result[1])
+    
+    return ks_pvals
 
-    return total_ks
 
-def replace_sample_subset(sample, fraction, data):
-        # split sample into positive and negative
-        sample_positive = sample[sample['ignition'] == 1]
-        sample_negative = sample[sample['ignition'] == 0]
+def replace_sample_subset(master_df, sample_ids, fraction):
+    # rebuild sample
+    sample = master_df[master_df.ID.isin(sample_ids)]
+    
+    # split sample into positive and negative
+    sample_positive = sample[sample['ignition'] == 1]
+    sample_negative = sample[sample['ignition'] == 0]
 
-        # choose n random indexes to replace in each
-        n_positive = len(sample_positive)
-        k_positive = int(len(sample_positive)*fraction)
-        indices_positive = random.sample(range(0, n_positive), k_positive)
+    # choose n random indexes to replace in each
+    n_positive = len(sample_positive)
+    k_positive = int(len(sample_positive)*fraction)
+    indices_positive = random.sample(range(0, n_positive), k_positive)
 
-        n_negative = len(sample_negative)
-        k_negative = int(len(sample_negative)*fraction)
-        indices_negative = random.sample(range(0, n_negative), k_negative)
+    n_negative = len(sample_negative)
+    k_negative = int(len(sample_negative)*fraction)
+    indices_negative = random.sample(range(0, n_negative), k_negative)
 
-        # grab data to replace and remove it from the sample
-        data_to_replace_positive = sample_positive.iloc[indices_positive]
-        ids_to_replace_positive = data_to_replace_positive.ID
-        sample_positive = sample_positive[~sample_positive.ID.isin(ids_to_replace_positive)]
+    # grab data to replace and remove it from the sample
+    data_to_replace_positive = sample_positive.iloc[indices_positive]
+    ids_to_replace_positive = data_to_replace_positive.ID
+    sample_positive = sample_positive[~sample_positive.ID.isin(ids_to_replace_positive)]
 
-        data_to_replace_negative = sample_negative.iloc[indices_negative]
-        ids_to_replace_negative = data_to_replace_negative.ID
-        sample_negative = sample_negative[~sample_negative.ID.isin(ids_to_replace_negative)]
+    data_to_replace_negative = sample_negative.iloc[indices_negative]
+    ids_to_replace_negative = data_to_replace_negative.ID
+    sample_negative = sample_negative[~sample_negative.ID.isin(ids_to_replace_negative)]
 
-        # split parent data into positive and negative
-        parent_positive = data[data['ignition'] == 1]
-        parent_negative = data[data['ignition'] == 0]
+    # split parent data into positive and negative
+    parent_positive = master_df[master_df['ignition'] == 1]
+    parent_negative = master_df[master_df['ignition'] == 0]
 
-        # grab replacement points and remove them from the parent dataset
-        # note: observations from last round are not in the parent dataset
-        new_sample_positive = k_random_sample(parent_positive, k_positive)
-        sample_ids_positive = sample_positive.ID
-        parent_positive = parent_positive[~parent_positive.ID.isin(sample_ids_positive)]
+    # grab replacement points
+    eligible_parent_positive = sample_positive[~sample_positive.ID.isin(ids_to_replace_positive)]
+    new_sample_positive = k_random_sample(eligible_parent_positive, k_positive)
 
-        new_sample_negative = k_random_sample(parent_negative, k_negative)
-        sample_ids_negative = sample_negative.ID
-        parent_negative = parent_negative[~parent_negative.ID.isin(sample_ids_negative)]
+    eligible_parent_negative = sample_negative[~sample_negative.ID.isin(ids_to_replace_negative)]
+    new_sample_negative = k_random_sample(eligible_parent_negative, k_negative)
 
-        # Add new points to sample and old points back to parent dataset
-        sample_positive = sample_positive.append(new_sample_positive)
-        sample_negative = sample_negative.append(new_sample_negative)
-        sample = sample_positive.append(sample_negative)
+    # Add new points to sample and old points back to parent dataset
+    sample_positive = sample_positive.append(new_sample_positive)
+    sample_negative = sample_negative.append(new_sample_negative)
+    sample = sample_positive.append(sample_negative)
 
-        parent_positive = parent_positive.append(data_to_replace_positive)
-        parent_negative = parent_negative.append(data_to_replace_negative)
-        data = parent_positive.append(parent_negative)
+    return sample
 
-        return data, sample
 
-def make_starting_sample(data, sample_size):
-    # make a master copy of the data
-    master_data = data.copy()
-
+def make_starting_sample(master_df, sample_size):
     # determine fraction positive observations in master data
-    fraction_positive = len(master_data[master_data['ignition'] == 1])/len(master_data)
+    fraction_positive = len(master_df[master_df['ignition'] == 1])/len(master_df)
 
     # split positive and negative datsets up
-    ignitions = data[data['ignition'] == 1]
-    no_ignitions = data[data['ignition'] == 0]
+    ignitions = master_df[master_df['ignition'] == 1]
+    no_ignitions = master_df[master_df['ignition'] == 0]
 
     # Calculate ignition & no ignition sample sizes
-    ignition_fraction = len(ignitions) / len(data)
+    ignition_fraction = len(ignitions) / len(master_df)
     ignition_sample_size = int((sample_size * ignition_fraction))
     no_ignition_sample_size = int((sample_size * (1 - ignition_fraction)))
 
     # sample data
     no_ignitions_sample = k_random_sample(no_ignitions, no_ignition_sample_size)
     ignitions_sample = k_random_sample(ignitions, ignition_sample_size)
+    
+    print("Starting sample ignitions: {}".format(len(ignitions_sample)))
+    print("Starting sample, no ignition: {}".format(len(no_ignitions_sample)))
 
     # combine
     sample = no_ignitions_sample.append(ignitions_sample)
+    
+    return sample
 
-    # in the first round, our sample is the winning sample
-    winning_sample = sample.copy()
-
-    # get IDs of observations in sample
-    sample_ids = sample.ID
-
-    # remove sample observations from parent dataset
-    data = data[~data.ID.isin(sample_ids)]
-
-    return sample, winning_sample, data, master_data
-
-def check_ks(total_ks, old_ks, sample, winning_sample, fraction, data):
-    if total_ks > old_ks:
-        # if we win, replace winning sample
-        #print("New winner total KS statistic: {}".format(np.round(total_ks,3)))
-        winning_sample = sample
-        old_ks = total_ks
-
-        # Then resample and move on
-        data, sample = replace_sample_subset(sample, fraction, data)
-
-    else:
-        # If we did not win, go back to our last winner, resample and move on
-        sample = winning_sample
-        #print("Total KS statistic: {}".format(np.round(total_ks,3)))
-        data, sample = replace_sample_subset(sample, fraction, data)
-
-    return(total_ks, old_ks, sample, winning_sample, data)
 
 def enum(*sequential, **named):
     """Handy way to fake an enumerated type in Python
@@ -158,21 +120,78 @@ size = comm.size        # total number of processes
 rank = comm.rank        # rank of this process
 status = MPI.Status()   # get MPI status object
 
+data_file = '../data/training_data/1992-2015_training_data_raw.csv'
+
+weather_variables = [
+    'air.sfc',
+    'air.2m', 
+    'apcp',
+    'crain',
+    'rhum.2m',
+    'dpt.2m',
+    'pres.sfc',
+    'uwnd.10m', 
+    'vwnd.10m',
+    'veg',
+    'prate',
+    'vis',
+]
+
+sample_size = 50000
+fraction = 0.1
+sample_round = 0
+target_pval = 0.9
+
+excluded_observations = []
+
+output_file_base_name = "../data/stratified_training_data/1992-2015_training_data_raw_n" \
+    +str(sample_size) \
+    +"_ks" \
+    +str(target_pval) \
+    +"."
+
+start_time = time.time()
+
 if rank == 0:
     print("Number of processes: {}".format(size))
-    # # Load & prep data
-    print("Ready to load data")
-    parent_data = pd.read_csv(data_file, low_memory=False)
-    parent_data = parent_data.sample(frac=1).reset_index(drop=True)
-    parent_data.insert(0, 'ID', range(0, len(parent_data)))
+    # Load & prep data
+    master_df = pd.read_csv(data_file, low_memory=False)
+    master_df.insert(0, 'ID', range(0, len(master_df)))
+
+    # Shuffel row order
+    master_df = master_df.sample(frac=1).reset_index(drop=True)
+    
+    # Scale variables of intrest
+    scaler = StandardScaler()
+    scaled_data = pd.DataFrame(scaler.fit_transform(master_df[weather_variables]), columns=weather_variables)
+    
+    # Add back variables we did not scale
+    scaled_data['lat'] = master_df['lat']
+    scaled_data['lon'] = master_df['lon']
+    scaled_data['weather_bin_month'] = master_df['weather_bin_month']
+    scaled_data['weather_bin_year'] = master_df['weather_bin_year']
+    scaled_data['ignition'] = master_df['ignition']
+    
+    # Add unscaled variable we want to stratify back to list
+    weather_variables.append = [
+        'weather_bin_month',
+        'weather_bin_year',
+        'lat',
+        'lon'
+    ]
+
+    # take starting sample and calculate ks
+    sample = make_starting_sample(master_df, sample_size)
+    sample_ids = sample['ID']
+    ks_pvals = ks_test(master_df, sample_ids, weather_variables)
+    target_pvals = [target_pval] * len(weather_variables)
+    distances = np.subtract(target_pvals, ks_pvals)
+    old_total_distance = sum(np.square(distances)) ** 0.5
+    
     print("Done loading and prepping data")
-
-    # # take starting sample
-    sample, winning_sample, parent_data, master_data = make_starting_sample(parent_data, sample_size)
-    total_ks = cal_KS_total_statistic(master_data, sample, weather_variables)
-    total_ks, old_ks, sample, winning_sample, parent_data = check_ks(total_ks, old_ks, sample, winning_sample, fraction, parent_data)
-
-    print("Starting ks: {}".format(old_ks))
+    print("Master df size: {}".format(len(master_df)))
+    print("Sample size: {}".format(len(sample)))
+    print("Starting total distance: {}".format(old_total_distance))
 
     while True:
         # Master process executes code below
@@ -181,17 +200,15 @@ if rank == 0:
         tag = status.Get_tag()
 
         if tag == tags.READY:
-
             # assemble workunit
             workunit = [
-                master_data, 
-                parent_data, 
-                sample,
-                weather_variables, 
-                total_ks, 
-                old_ks,
+                weather_variables,
+                old_total_distance,
                 fraction,
-                sample_round
+                sample_round,
+                sample_ids,
+                excluded_observations,
+                target_pval
             ]
 
             # send workunit to nodes
@@ -200,96 +217,89 @@ if rank == 0:
         elif tag == tags.DONE:
             # unpack results
             result = data
-            worker_parent_data = result[0]
-            worker_winning_sample = result[1]
-            worker_ks = result[2]
-            worker_sample_round = result[3]
+            worker_ks_pvals = result[0]
+            worker_total_distance = result[1]
+            worker_sample_round = result[2]
+            worker_sample_ids = result[3]
+            dT = np.round(((time.time() - start_time) / 3600),2)
 
-            # if KS score from worker wins, update
-            if worker_ks > old_ks:
-                print("Winning KS from worker {} round {}: {}".format(source, worker_sample_round, worker_ks))
-                parent_data = worker_parent_data
-                sample = worker_winning_sample
-                winning_sample = worker_winning_sample
-                old_ks = worker_ks
+            # if distance from worker wins, update
+            if worker_total_distance < old_total_distance and worker_sample_round == sample_round:
+                print("Winning distance from worker {} round {}: {}, dT: {}".format(
+                    source, 
+                    worker_sample_round, 
+                    np.round(worker_total_distance, 4),
+                    dT)
+                )
+                sample_ids = worker_sample_ids
+                old_total_distance = worker_total_distance
 
-                # if this sample passes threshold, write to file, exclude observations
+                # if all pvalues from this sample pass threshold, write to file, exclude observations
                 # from future samples and reset
-                if worker_ks >= ks_threshold and worker_sample_round == sample_round:
-
+                if all(p_vals >= 0.9 for p_vals in worker_ks_pvals) and worker_sample_round == sample_round:
                     # write winner to disk
                     print("Winner winner chicken dinner, round: {}".format(sample_round))
-                    output_file = 'sample.'+str(sample_round)+'.csv'
+                    output_file = str(output_file_base_name)+str(sample_round)+'.csv'
+                    sample = master_df[master_df.ID.isin(sample_ids)]
                     sample.to_csv(output_file, index=False)
                     sample_round += 1
 
-                    # exclude observations in winning sample
-                    excluded_indicies = sample.ID.values
-                    parent_data = parent_data[~parent_data.ID.isin(excluded_indicies)]
-                    
                     # reset for next workunit
-                    old_ks = 0
-                    sample, winning_sample, parent_data, master_data = make_starting_sample(
-                        parent_data,
-                        sample_size
-                    )
-                    total_ks = cal_KS_total_statistic(
-                        master_data,
-                        sample,weather_variables
-                    )
-                    total_ks, old_ks, sample, winning_sample, parent_data = check_ks(
-                        total_ks, 
-                        old_ks, 
-                        sample, 
-                        winning_sample, 
-                        fraction, 
-                        parent_data
-                    )
-
-                    print("New starting KS: {}".format(old_ks))
+                    excluded_observations = sample['ID']
+                    master_df = master_df[~master_df.ID.isin(excluded_observations)]
+                    sample = make_starting_sample(master_df, sample_size)
+                    sample_ids = sample['ID']
+                    ks_pvals = ks_test(master_df, sample_ids, weather_variables)
+                    distances = np.subtract(target_pvals, ks_pvals)
+                    old_total_distance = sum(np.square(distances)) ** 0.5
+                    print("New starting distance: {}".format(old_total_distance))
 
 else:
     # Worker processes execute code below
+    master_df = pd.read_csv(data_file, low_memory=False)
+    master_df.insert(0, 'ID', range(0, len(master_df)))
+    
     name = MPI.Get_processor_name()
-
+    
     while True:
         comm.send(None, dest=0, tag=tags.READY)
         workunit = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
         tag = status.Get_tag()
 
         # unpack workunit
-        master_data = workunit[0]
-        parent_data = workunit[1]
-        sample = workunit[2]
-        weather_variables = workunit[3]
-        total_ks = workunit[4]
-        old_ks = workunit[5]
-        fraction = workunit[6]
-        sample_round = workunit[7]
+        weather_variables = workunit[0]
+        old_total_distance = workunit[1]
+        fraction = workunit[2]
+        sample_round = workunit[3]
+        sample_ids = workunit[4]
+        excluded_observations = workunit[5]
+        target_pval = workunit[6]
         
         if tag == tags.START:
+            master_df = master_df[~master_df.ID.isin(excluded_observations)]
+            sample = replace_sample_subset(master_df, sample_ids, fraction)
+            target_pvals = [target_pval] * len(weather_variables)
 
             # Do the work here
-            while old_ks >= total_ks:
-                parent_data, sample = replace_sample_subset(sample, fraction, parent_data)
-                total_ks = cal_KS_total_statistic(
-                    master_data,
-                    sample, 
-                    weather_variables
-                )
+            for i in range(randint(10, 20)):
+                sample_ids = sample['ID']
+                ks_pvals = ks_test(master_df, sample_ids, weather_variables)
+                distances = np.subtract(target_pvals, ks_pvals)
+                total_distance = sum(np.square(distances)) ** 0.5
+                
+                if total_distance < old_total_distance:
+                    # if we win assemble result
+                    result = []
+                    result.append(ks_pvals)
+                    result.append(total_distance)
+                    result.append(sample_round)
+                    result.append(sample_ids)
 
-            winning_sample = sample
-            old_ks = total_ks
+                    # send result to headnode   
+                    comm.send(result, dest=0, tag=tags.DONE)
+                    
+                    break
 
-            # assemble result
-            result = []
-            result.append(parent_data)
-            result.append(winning_sample)
-            result.append(old_ks)
-            result.append(sample_round)
-
-            # send result to headnode   
-            comm.send(result, dest=0, tag=tags.DONE)
-
-            # send ready for new workunit
-            #comm.send(result, dest=0, tag=tags.READY)
+                else:
+                    # If we did not win, go back to our last winner, resample and move on
+                    sample = replace_sample_subset(master_df, sample_ids, fraction)
